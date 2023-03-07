@@ -11,6 +11,9 @@
 #include "cachelab.h"
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
+void transpose_bsize_opt(int M, int N, int A[N][M], int B[M][N]);
+
+void transpose_64(int M, int N, int A[N][M], int B[M][N]);
 
 /* 
  * transpose_submit - This is the solution transpose function that you
@@ -22,7 +25,34 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
+	int bsize = 8;
+	if (M==64 && N==64)
+	{
+		bsize = 4;
+	}
+	int block_col = 0;
+	int block_row = 0;
+	int col = 0 ;
+	int row = 0;
+	int block_row_num = ( N + bsize - 1) / bsize;
+	int block_col_num = ( M + bsize - 1) / bsize;
+ 
+	for ( block_row = 0; block_row < block_row_num; block_row++)
+	{
+		for ( block_col = 0; block_col < block_col_num ; block_col++)
+		{
+			for ( row = 0; row < bsize && (block_row * bsize + row < N); row++)
+			{
+				for ( col = 0; col < bsize && ( block_col * bsize + col < M); col++)
+				{
+					B[block_col * bsize + col][block_row * bsize + row] = A[block_row * bsize + row][block_col * bsize + col];
+				}
+			}
+		}
+	}
 }
+	
+	
 
 /* 
  * You can define additional transpose functions below. We've defined
@@ -60,7 +90,6 @@ void registerFunctions()
 
     /* Register any additional transpose functions */
     registerTransFunction(trans, trans_desc); 
-
 }
 
 /* 
